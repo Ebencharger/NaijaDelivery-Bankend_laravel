@@ -33,6 +33,8 @@ class Order extends Migration
             $table->string('status');
             $table->string('deliverto');
             $table->string('year');
+            $table->string('recipentname')->nullable();
+            $table->string('recipentphone')->nullable();
             $table->string('delivertime')->nullable();
             $table->string('transactionDate');
             $table->timestamps();

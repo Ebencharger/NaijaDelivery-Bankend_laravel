@@ -315,6 +315,10 @@ Route::post('/enddelivery', [mobile::class,'end_delivery']);
 Route::post('/ridercancelorder', [mobile::class, 'rider_cancel_order']);
 
 
+//delete account
+Route::post('/riderdeleteaccount', [mobile::class, 'rider_delete_account']);
+
+
 
 
 //USER'DATA
@@ -443,6 +447,9 @@ Route::post('/usercancelorder', [mobile::class, 'user_cancel_order']);
 
 //log out
 Route::post('/userlogout', [mobile::class, 'user_logout']);
+
+//delete account
+Route::post('/userdeleteaccount', [mobile::class, 'user_delete_account']);
 
 //call loyaltypoint
 //implement holding

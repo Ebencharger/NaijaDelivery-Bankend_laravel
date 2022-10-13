@@ -193,8 +193,10 @@ class mobile extends Controller
     $ongoing=[];
     $cancel=[];
     $history=[];
+    $credit=[];
     $withdrawal_details=DB::table('withdrawal_account')->where('id', $request->id)
     ->get();
+    $credit= DB::table('credit')->where('riderid', $request->id)->get();
     $history = DB::table('order')
         ->where([['userid', $request->id], ['status', 'Delivered']])
         ->get();
@@ -248,7 +250,7 @@ class mobile extends Controller
     $notification = DB::table('ridernoti')
         ->where([['rider_id', $request->id]])
         ->get();
-    $riderData = ['history' => $history, 'ongoing' => $ongoing, 'cancel' => $cancel, 'withdrawal' => $withdraw, 'notification' => $notification, 'withdrawal_details'=>$withdrawal_details];
+    $riderData = ['history' => $history, 'ongoing' => $ongoing, 'cancel' => $cancel, 'withdrawal' => $withdraw, 'notification' => $notification, 'withdrawal_details'=>$withdrawal_details,'credit'=>$credit];
     $check = DB::table('rider')
         ->where('id', $request->id)
         ->get();
@@ -543,6 +545,11 @@ public function end_delivery(Request $request){
             ->where('id', $request->id)
             ->get('balance'),
     );
+     $deliverCount = json_decode(
+        DB::table('rider')
+            ->where('id', $request->id)
+            ->get('delivertime'),
+    );
     $date = Carbon::now();
     $monthName = $date->format('F') . ' ' . $date->format('Y');
     $time = $date->format('G:ia');
@@ -567,8 +574,14 @@ $check=DB::table('order')->where([['userid', $request->id], ['status', 'In Progr
         ]);
        
         $sus = DB::table('rider')->where('id', $request->id)->update([
+            'delivertime'=>$deliverCount[0]->delivertime+1,
             'balance' => $balance[0]->balance + $fee,
         ]);
+        DB::table('credit')->insert([
+            'riderid' => $request->id,
+            'amount'=>$fee,
+            'date'=>$time.', '.$completeYear,
+            ]);
         $sus = DB::table('riderhistory')->insert([
             'riderid' => $request->id,
             'address' => $request->deliver_to,
@@ -669,6 +682,32 @@ public function rider_cancel_order(Request $request){
     }
    
 } 
+
+//delete account
+public function rider_delete_account(Request $request){
+    $date = Carbon::now();
+    $monthName = $date->format('F') . ' ' . $date->format('Y');
+    $time = $date->format('G:ia');
+    $completeYear = $date->format('d/m/Y');
+    $rider_name=DB::table('rider')->where('id', $request->id)->get('name');
+    $success=DB::table('rider')->where('id', $request->id)->delete();
+    if($success){
+         DB::table('activity')->insert([
+                    'restid' => '',
+                    'what' => $time . ', ' . $completeYear . ': ' . $rider_name[0]->name . ' Deleted his Rider account',
+                ]);
+        DB::table('riderdeleteaccount')->insert([
+            'account_id'=>$request->id,
+            'account_name'=>$rider_name[0]->name,
+            'why'=>$request->why,
+            'date'=>$time.','.$completeYear
+            ]);
+        return 'You deleted your account';
+    }else{
+        return 'Something went wrong';
+    }
+    
+}
 
 
 
@@ -967,6 +1006,8 @@ public function send_pack(Request $request){
             'pickup' => $request->senderAddress . ',' . $request->senderCountry . ',' . $request->senderPhone,
             'pickuptime' => '',
             'Status' => 'Pending',
+            'recipentname'=>$request->receiverName,
+             'recipentphone'=>$request->receiverPhone,
             'deliverto' => $request->receiverAddress . ',' . $request->receiverCountry . ',' . $request->receiverPhone,
             'delivertime' => '',
             'transactionDate' => $transYear,
@@ -1060,6 +1101,8 @@ public function send_pack(Request $request){
                 'pickup' => $pickup,
                 'pickuptime' => $time,
                 'Status' => 'Pending',
+                'recipentname'=>$request->receiverName,
+             'recipentphone'=>$request->receiverPhone,
                 'deliverto' => $request->address,
                 'delivertime' => $request->$time,
                 'transactionDate' => $transYear,
@@ -1267,6 +1310,33 @@ public function user_logout(Request $request){
         }
 }
 
+
+
+//delete account
+public function user_delete_account(Request $request){
+    $date = Carbon::now();
+    $monthName = $date->format('F') . ' ' . $date->format('Y');
+    $time = $date->format('G:ia');
+    $completeYear = $date->format('d/m/Y');
+    $rider_name=DB::table('customers')->where('id', $request->id)->get('name');
+    $success=DB::table('customers')->where('id', $request->id)->delete();
+    if($success){
+         DB::table('activity')->insert([
+                    'restid' => '',
+                    'what' => $time . ', ' . $completeYear . ': ' . $rider_name[0]->name . ' Deleted his Rider account',
+                ]);
+        DB::table('userdeleteaccount')->insert([
+            'account_id'=>$request->id,
+            'account_name'=>$rider_name[0]->name,
+            'why'=>$request->why,
+            'date'=>$time.','.$completeYear
+            ]);
+        return 'You deleted your account';
+    }else{
+        return 'Something went wrong';
+    }
+    
+}
 
 
 }
